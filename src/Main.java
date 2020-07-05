@@ -1,11 +1,10 @@
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Point3D;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
+import javafx.scene.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
@@ -21,9 +20,12 @@ import javafx.stage.StageStyle;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Scanner;
 
 import KBControlsFX.*;
+
+import javax.imageio.ImageIO;
 
 public class Main extends Application {
 
@@ -40,13 +42,15 @@ public class Main extends Application {
         Rotate theta = new Rotate();
         theta.setAxis(new Point3D(0, 0, 1));
         system.getTransforms().addAll(phi, theta);
+        system.setTranslateX(1920/2);
+        system.setTranslateY(1050/2);
         root.getChildren().add(system);
 
         cam = new PerspectiveCamera();
-        cam.setTranslateZ(-100.0);
+        cam.setTranslateZ(-3000.0);
 
-        Scene scene = new Scene(root, 1480, 820, true, SceneAntialiasing.DISABLED);
-        scene.setFill(new Color(0.05, 0.05, 0.1, 1.0));
+        Scene scene = new Scene(root, 1480, 820, true, SceneAntialiasing.BALANCED);
+        scene.setFill(Color.valueOf("#06060a"));
         scene.setCamera(cam);
 
         stage.setScene(scene);
@@ -71,8 +75,10 @@ public class Main extends Application {
         Controls.addActionAndBind(KeyCode.W, "move up", () -> system.setTranslateY(system.getTranslateY() - 10));
         Controls.addActionAndBind(KeyCode.S, "move down", () -> system.setTranslateY(system.getTranslateY() + 10));
 
-        Controls.addActionAndBind(KeyCode.UP, "rotate up", () -> phi.setAngle(phi.getAngle()+2.0));
-        Controls.addActionAndBind(KeyCode.DOWN, "rotate down", () -> phi.setAngle(phi.getAngle()-2.0));
+        Controls.addActionAndBind(KeyCode.P, "take snapshot", this::takeSnapshot);
+
+        Controls.addActionAndBind(KeyCode.UP, "rotate up", () -> phi.setAngle(phi.getAngle()+45.0));
+        Controls.addActionAndBind(KeyCode.DOWN, "rotate down", () -> phi.setAngle(phi.getAngle()-45.0));
         Controls.addActionAndBind(KeyCode.LEFT, "rotate left", () -> theta.setAngle(theta.getAngle()-2.0));
         Controls.addActionAndBind(KeyCode.RIGHT, "rotate right", () -> theta.setAngle(theta.getAngle()+2.0));
 
@@ -80,10 +86,23 @@ public class Main extends Application {
         Controls.addActionAndBind(KeyCode.MINUS, "zoom out", () -> deltaZoom(-10));
     }
 
+    public void takeSnapshot(){
+        SnapshotParameters sp = new SnapshotParameters();
+        sp.setFill(Color.BLACK);
+        sp.setCamera(cam);
+        sp.setDepthBuffer(true);
+        WritableImage image = root.snapshot(sp, null);
+
+        File file = new File("snapshot_" + String.valueOf(Math.random()).substring(3, 7) + ".png");
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Snapshot taken");
+    }
+
     public void deltaZoom(double dZ){
-        /*system.setScaleX(system.getScaleX()*dZ);
-        system.setScaleY(system.getScaleY()*dZ);
-        system.setScaleZ(system.getScaleZ()*dZ);*/
         cam.setTranslateZ(cam.getTranslateZ()+dZ);
     }
 
@@ -112,7 +131,8 @@ public class Main extends Application {
         orbit.setRadiusY(b);
         //orbit.setFill(Color.LIMEGREEN);
         orbit.setFill(Color.TRANSPARENT);
-        orbit.setStroke(Color.LIMEGREEN);
+        orbit.setStroke(Color.valueOf("#fcae1e55"));
+        orbit.setStrokeWidth(1.0);
 
         Rotate argPRot = new Rotate();
         argPRot.setAngle(argP);
@@ -145,7 +165,7 @@ public class Main extends Application {
         File dataset = new File("dataset");
         Scanner fileSc = new Scanner(dataset);
 
-        int n = 300; int i = 0;
+        int n = 20000; int i = 0;
         while(fileSc.hasNextLine() && i < n){
             // Using TLE format (cero: name; first: identifiers; second: orbital elements)
             String cero = fileSc.nextLine();
