@@ -19,5 +19,7 @@ If you choose to download the source code make sure to clone the repository, don
 
 - <kbd>+</kbd>, <kbd>-</kbd> - Zoom in and out.
 
+- <kbd>P</kbd> - Takes snapshot.
+
 ## Screenshot
 ![Screenshot](/screenshots/screenshot.png?raw=true "Screenshot of SatGraph")
